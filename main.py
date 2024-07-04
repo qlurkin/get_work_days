@@ -2,7 +2,6 @@
 from datetime import datetime
 import requests
 import argparse
-import arrow
 import icalendar
 
 from dateutil.rrule import MO, TU, WE, TH, FR, SA, SU, WEEKLY, rrule, weekday
@@ -41,16 +40,9 @@ if response.status_code != 200:
 
 ics = response.text
 
-# c = Calendar(ics)
 c = icalendar.Calendar.from_ical(ics)
 
 days = set()
-
-# for event in c.events:
-#     d = event.begin
-#     d = arrow.arrow.Arrow(d.year, d.month, d.day)
-#     if d.is_between(start, end, bounds="[)"):
-#         days.add(d)
 
 for event in c.walk("VEVENT"):
     dtstart = event.get("DTSTART").dt
@@ -72,8 +64,3 @@ for event in c.walk("VEVENT"):
 
 print(f"du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')}")
 print(len(days))
-
-# e = sorted(list(days))[19]
-
-# print(dir(e))
-# print(e._get_iteration_params())
