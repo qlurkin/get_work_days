@@ -1,1 +1,5 @@
-config
+config.json
+*.pdf
+map.png
+signature.png
+document.typ

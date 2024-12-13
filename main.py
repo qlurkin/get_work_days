@@ -2,6 +2,8 @@ from datetime import datetime
 import requests
 import argparse
 import icalendar
+import json
+import subprocess as sp
 
 from dateutil.rrule import MO, TU, WE, TH, FR, SA, SU, WEEKLY, rrule, weekday
 
@@ -16,8 +18,14 @@ wd: dict[str, weekday] = {
 }
 
 try:
-    with open("config") as file:
-        url = file.read().strip()
+    with open("config.json") as file:
+        config = json.loads(file.read())
+        url = config["url"]
+        trigramme = config["trigramme"]
+        firstname = config["firstname"]
+        lastname = config["lastname"]
+        price_per_km = config["priceperkm"]
+        address = config["address"]
 except FileNotFoundError:
     raise Exception("Config file not found")
 
@@ -41,6 +49,9 @@ ics = response.text
 
 c = icalendar.Calendar.from_ical(ics)
 
+# with open("LUR.ics") as file:
+#     c = icalendar.Calendar.from_ical(file.read())
+
 days = set()
 
 for event in c.walk("VEVENT"):
@@ -60,6 +71,23 @@ for event in c.walk("VEVENT"):
         if dt >= start and dt < end:
             days.add(dt.date())
 
+# print(f"du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')}")
+days = "(" + ", ".join([f'"{d.strftime("%d/%m/%Y")}"' for d in sorted(days)]) + ")"
+# print()
+# print(len(days))
 
-print(f"du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')}")
-print(len(days))
+with open("template.typ") as file:
+    content = (
+        file.read()
+        .replace('("DAYS",)', days)
+        .replace('"PRICE_PER_KM"', str(price_per_km))
+        .replace("FULLNAME", firstname + " " + lastname)
+        .replace("FIRSTNAME", firstname)
+        .replace("LASTNAME", lastname)
+        .replace("ADDRESS", address)
+    )
+
+with open("document.typ", "w") as file:
+    file.write(content)
+
+sp.run(["typst", "compile", "document.typ"])
